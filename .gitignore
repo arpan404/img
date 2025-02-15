@@ -9,3 +9,7 @@ dist
 .Trashes
 ehthumbs.db
 Thumbs.db
+videos/
+config.json
+
+/img/__pycache__/

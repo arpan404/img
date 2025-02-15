@@ -1,21 +1,9 @@
-from img.gemini import get_content
-from img.filter import filter_content
-from dotenv import load_dotenv
-import pyttsx3
-load_dotenv()
+from  img.config import Config
 
-engine = pyttsx3.init()
-a = get_content("""Create a gripping 50-60 second story that immediately captures attention with a shocking twist. It must be a story time.""")
-
-
-voices = engine.getProperty('voices')
-for index, voice in enumerate(voices):
-    print(f"Index: {index}, ID: {voice.id}, Name: {voice.name}")
-
-engine.setProperty('voice', voices[132].id)
-# Adjust speech rate
-engine.setProperty('rate', 150)
-# Adjust volume (0.0 to 1.0)
-engine.setProperty('volume', 1)
-engine.say(a)
-engine.runAndWait()
+def main():
+    config = Config("config.json")
+    config.load()
+    print(config.style('style1'))
+    
+if __name__ == "__main__":
+    main()
