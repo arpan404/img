@@ -1,0 +1,15 @@
+{
+  "type": "object",
+
+  "patternProperties": {
+    "^[a-zA-Z0-9]+$": {
+      "type": "object",
+      "properties": {
+        "prompt": "string",
+        "videoFile": "string",
+        "audioID": "string"
+      },
+      "required": ["prompt", "videoFile", "audioID"]
+    }
+  }
+}
