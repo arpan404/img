@@ -1,2 +1,2 @@
-from .gemini import get_content
-from .filter import filter_content
+from .config import Config
+from .content import Content
