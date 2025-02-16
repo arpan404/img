@@ -4,6 +4,8 @@ import uuid
 import re
 from gtts import gTTS
 from pydub import AudioSegment
+from moviepy import VideoFileClip, AudioFileClip
+import random
 
 
 class Content:
@@ -39,7 +41,39 @@ class Content:
             return False
 
     def __generate_video(self):
-        return None
+        if not self.__style["videoFile"]:
+            raise Exception("No video file specified")
+        is_abs = os.path.isabs(self.__style["videoFile"])
+        if is_abs:
+            video_path = self.__style["videoFile"]
+        else:
+            is_relative = os.path.isfile(self.__style["videoFile"])
+            if is_relative:
+                video_path = os.path.join(os.getcwd(), self.__style["videoFile"])
+            else:
+                video_path = os.path.join(
+                    os.getcwd(), "videos", self.__style["videoFile"]
+                )
+        print(video_path)
+        if not os.path.exists(video_path) or not os.path.isfile(video_path):
+            raise Exception("Video file does not exist")
+
+        video = VideoFileClip(video_path)
+        video_duration = video.duration
+        if video_duration < self.__audio_duration:
+            raise Exception("Video is shorter than audio")
+        video_starting_point = random.uniform(0, video_duration - self.__audio_duration)
+        edited_video = video.subclipped(
+            video_starting_point, video_starting_point + self.__audio_duration
+        ).without_audio()
+
+        video_audio = AudioFileClip(self.__audio_path)
+        edited_video = edited_video.without_audio().with_audio(video_audio)
+        edited_video.write_videofile(
+            os.path.join(os.getcwd(), "temp", f"{self.__content_id}_trimmed.mp4"),
+            codec="libx264",
+            audio_codec="aac",
+        )
 
     def __generate_story(self, prompt: str):
         """
@@ -69,6 +103,7 @@ class Content:
         sped_up_audio_path = os.path.join(
             os.getcwd(), "temp", f"{self.__content_id}_sped_up.mp3"
         )
+        self.__audio_path = sped_up_audio_path
         self.__audio_duration = self.__speed_up_audio(
             generated_audio_path, sped_up_audio_path
         )
