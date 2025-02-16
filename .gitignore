@@ -13,3 +13,4 @@ videos/
 config.json
 
 /img/__pycache__/
+temp/

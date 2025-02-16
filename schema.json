@@ -7,9 +7,9 @@
       "properties": {
         "prompt": "string",
         "videoFile": "string",
-        "audioID": "string"
+        "language": "string"
       },
-      "required": ["prompt", "videoFile", "audioID"]
+      "required": ["prompt", "videoFile", "language"]
     }
   }
 }
