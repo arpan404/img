@@ -14,3 +14,5 @@ config.json
 
 /img/__pycache__/
 temp/
+.idea/
+.venv/
