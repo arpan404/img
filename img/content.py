@@ -67,6 +67,15 @@ class Content:
             video_starting_point, video_starting_point + self.__audio_duration
         ).without_audio()
 
+        video_height = edited_video.h
+        video_width = edited_video.w
+        needed_width = int(video_height * 9 / 16)
+        if needed_width > video_width:
+            raise Exception("Video is not wide enough")
+        crop_x1 = (video_width - needed_width) / 2
+        crop_x2 = video_width - crop_x1
+        edited_video = edited_video.cropped(x1=crop_x1, x2=crop_x2)
+
         video_audio = AudioFileClip(self.__audio_path)
         edited_video = edited_video.without_audio().with_audio(video_audio)
         edited_video.write_videofile(
@@ -94,7 +103,7 @@ class Content:
     def generate(self, style: dict) -> str | None:
         self.__content_id = str(uuid.uuid4())
         self.__style = style
-        self.__audio__speed = 1.25
+        self.__audio__speed = 1.2
         self.__generate_story(style["prompt"])
         generated_audio_path = self.__generate_audio(self.__story)
         if generated_audio_path is None:
