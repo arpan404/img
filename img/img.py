@@ -1,7 +1,7 @@
 import os
 from google import genai
-import uuid
 import re
+from gtts import gTTS
 from moviepy import VideoFileClip, AudioFileClip
 import random
 
@@ -27,7 +27,7 @@ class Img:
 
         self.__validateVideoPath()
 
-    def __validateVideoPath(self):
+    def __validateVideoPath(self) -> None:
         """
 
         Validates the video path specified in the content style.
@@ -61,11 +61,11 @@ class Img:
         # if path is valid, set it in the content style
         self.__content_style["videoFile"] = video_path
 
-    def __check_create_temp_dir(self):
+    def __check_create_temp_dir(self) -> None:
         if not os.path.exists(os.path.join(os.getcwd(), "temp")):
             os.makedirs(os.path.join(os.getcwd(), "temp"))
 
-    def __generate_video(self):
+    def __generate_video(self) -> None:
 
         video_path = self.__content_style["videoFile"]
 
@@ -96,7 +96,7 @@ class Img:
         #  trim the video, then crop it, then add the audio (in this order for performance reasons)
         edited_clip = (
             video.subclipped(
-                video_starting_point, video_starting_point + self.__audio_duration
+                video_starting_point, video_starting_point + audio.duration
             )
             .without_audio()
             .cropped(x1=crop_x1, x2=crop_x2)
@@ -131,3 +131,26 @@ class Img:
 
         # remove any text inside parentheses from the story (usually it contains the environment description, which is not needed)
         self.__story = re.sub(r"\(.*?\)", "", response.text)
+
+    def __generate_audio(self) -> None:
+        """
+        Generate audio based on the story and the voice specified in the content style.
+
+        Will raise an exception if the audio generation fails.
+        """
+
+        # todo: make this voice thing more natural
+        tts = gTTS(text=self.__story, lang=self.__content_style["language"])
+        self.__check_create_temp_dir()
+        self.__audio_path = os.path.join(
+            os.getcwd(), "temp", f"{self.__content_id}.mp3"
+        )
+        tts.save(self.__audio_path)
+
+    def generate(self) -> None:
+        """
+        Generate the content (story and video) based on the content style and content id.
+        """
+        self.__generate_story()
+        self.__generate_audio()
+        self.__generate_video()
