@@ -103,8 +103,9 @@ class Content:
     def generate(self, style: dict) -> str | None:
         self.__content_id = str(uuid.uuid4())
         self.__style = style
-        self.__audio__speed = 1.2
+        self.__audio__speed = 1.01
         self.__generate_story(style["prompt"])
+        print(self.__story)
         generated_audio_path = self.__generate_audio(self.__story)
         if generated_audio_path is None:
             print("Error generating audio")
@@ -114,7 +115,7 @@ class Content:
         )
         self.__audio_path = sped_up_audio_path
         self.__audio_duration = self.__speed_up_audio(
-            generated_audio_path, sped_up_audio_path
+            generated_audio_path, sped_up_audio_path, self.__audio__speed
         )
         if self.__audio_duration is False:
             print("Error speeding up audio")

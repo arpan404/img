@@ -1,2 +1,2 @@
 from .config import Config
-from .content import Content
+from .test import Content

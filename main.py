@@ -1,5 +1,5 @@
 from img.config import Config
-from img.content import Content
+from img.test import Content
 
 
 def main():
