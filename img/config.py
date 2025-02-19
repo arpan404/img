@@ -1,22 +1,6 @@
 import json
 import os
-from pydantic import BaseModel
-from typing import Dict
-
-class GenerationStyle(BaseModel):
-    prompt: str
-    video: str
-    language: str
-
-class Stories(BaseModel):
-    story: str
-    video: str
-    language: str
-
-# type for Config file and the content of the config file, same as the
-class Configuration(BaseModel):
-    styles: Dict[str, GenerationStyle]
-    stories: Dict[str, Stories]
+from img.types import Configuration, Styles, Stories
 
 
 class Config:
@@ -29,23 +13,21 @@ class Config:
         if not os.path.exists(path):
             raise FileNotFoundError(f"Configuration file not found: {path}")
         self.path = path
-
-    def load(self):
+ 
+    def load(self) -> None:
         """
         Loads the configuration file and return the save and return the config data
         """
         if self.config_data is None:
             with open(self.path, "r") as file:
                 self.config_data = Configuration.model_validate(json.load(file))
-        print(self.config_data)
-        return self.config_data
 
-    def get_style(self, variant: str) -> GenerationStyle:
+    def get_style(self, variant: str) -> Styles:
         """
         Returns the style of the content, which indicates the style of the content, including the voice, prompt, and other parameters
         """
         return self.config_data.styles[variant]
-    
+
     def get_story(self, variant: str) -> Stories:
         """
         Returns the story of the content, which indicates the story of the content, including the story, video, and other parameters
