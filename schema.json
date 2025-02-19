@@ -1,15 +1,40 @@
 {
   "type": "object",
-
-  "patternProperties": {
-    "^[a-zA-Z0-9]+$": {
-      "type": "object",
-      "properties": {
-        "prompt": "string",
-        "videoFile": "string",
-        "language": "string"
-      },
-      "required": ["prompt", "videoFile", "language"]
+  "styles": {
+    "patternProperties": {
+      "^[a-zA-Z0-9]+$": {
+        "type": "object",
+        "properties": {
+          "prompt": "string",
+          "language": "string",
+          "video": "string"
+        },
+        "required": [
+          "prompt",
+          "language"
+        ]
+      }
     }
-  }
+  },
+  "stories": {
+    "type": "object",
+    "patternProperties": {
+      "^[a-zA-Z0-9]+$": {
+        "type": "object",
+        "properties": {
+          "story": "string",
+          "language": "string",
+          "video": "string"
+        },
+        "required": [
+          "prompt",
+          "language",
+          "video"
+        ]
+      }
+    }
+  },
+  "required": [
+    "styles"
+  ]
 }
