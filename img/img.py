@@ -4,7 +4,7 @@ import re
 from gtts import gTTS
 from moviepy import VideoFileClip, AudioFileClip
 import random
-
+from img.audio import generate_audio
 
 class Img:
 
@@ -140,17 +140,19 @@ class Img:
         """
 
         # todo: make this voice thing more natural
-        tts = gTTS(text=self.__story, lang=self.__content_style["language"])
+        # tts = gTTS(text=self.__story, lang=self.__content_style["language"])
         self.__check_create_temp_dir()
         self.__audio_path = os.path.join(
-            os.getcwd(), "temp", f"{self.__content_id}.mp3"
+            os.getcwd(), "temp", f"{self.__content_id}.wav"
         )
-        tts.save(self.__audio_path)
+        # tts.save(self.__audio_path)
+        generate_audio(self.__audio_path)
 
     def generate(self) -> None:
         """
         Generate the content (story and video) based on the content style and content id.
         """
         self.__generate_story()
+        print(self.__story)
         self.__generate_audio()
         self.__generate_video()
