@@ -99,29 +99,52 @@ class Img:
         )
 
         composite_data = [edited_clip]
+        texts = self.__story.split(" ")
+        text_group = ""
+        group_size = 0
+        start_time = 0
+        text_max_sizes = (5, 100)  # 5 words maximum, 100 characters maximum
+        for text in texts:
+            if (
+                group_size + 1 > text_max_sizes[0]
+                or len(text_group) + len(text) + 1 > text_max_sizes[1]
+            ):
+                text_group = text_group + " " + text
+                text_clip = TextClip(
+                    text=text_group.strip(),
+                    font_size=40,
+                    color="white",
+                    margin=(10, 20),
+                    font="Arial",
+                    method="caption",
+                    size=(video_width - 80, video_height / 2),
+                )
+                text_clip = text_clip.with_duration(5)
+                text_clip = text_clip.with_start(start_time)
+                text_clip = text_clip.with_position("center").with_fps(video.fps)
+                composite_data.append(text_clip)
+                text_group = ""
+                group_size = 0
+                start_time += 5
+            else:
+                text_group = text_group + " " + text
+                group_size += 1
 
-        text1 = TextClip(text="First Text", font_size = 40, color='white', margin=(10,20), font='Arial')
-        text2 = TextClip(text="Second Text", font_size = 70,  color='yellow', font='Arial')
-        text3 = TextClip(text="Third Text",font_size = 70,  color='red' ,font='Arial')
+        if text_group != "":
+            text_clip = TextClip(
+                text=text_group.strip(),
+                font_size=40,
+                color="white",
+                margin=(10, 20),
+                font="Arial",
+                method="caption",
+                size=(video_width - 80, video_height / 2),
+            )
+            text_clip = text_clip.with_duration(5)
+            text_clip = text_clip.with_start(start_time)
+            text_clip = text_clip.with_position("center").with_fps(video.fps)
+            composite_data.append(text_clip)
 
-        # Set individual durations for each text clip
-        text1 = text1.with_duration(5)  # Display for 5 seconds
-        text2 = text2.with_duration(3)  # Display for 3 seconds
-        text3 = text3.with_duration(7)  # Display for 7 seconds
-
-        # Set the start times for each text clip (optional)
-        text1 = text1.with_start(0)  # Start at the beginning
-        text2 = text2.with_start(5)  # Start after text1 ends
-        text3 = text3.with_start(8)  # Start after text2 ends
-
-        # Set the positions of the text clips (customize as needed)
-        text1 = text1.with_position('center').with_fps(video.fps)
-        text2 = text2.with_position('center').with_fps(video.fps)
-        text3 = text3.with_position('center').with_fps(video.fps)
-
-        composite_data.append(text1)
-        composite_data.append(text2)
-        composite_data.append(text3)
         # Combine the video and the text clips
         edited_clip = CompositeVideoClip(composite_data)
 
@@ -201,7 +224,6 @@ class Img:
 
         # Remove temporary file
         os.remove(temp_wav_path)
-
 
     def generate(self, config: Styles | Stories) -> None:
         """
