@@ -6,7 +6,14 @@ from moviepy import VideoFileClip, AudioFileClip
 import random
 from img.types import Styles, Stories
 import uuid
-import json
+import soundfile as sf
+import numpy as np
+from gtts import gTTS
+from pydub import AudioSegment
+import numpy as np
+import scipy.io.wavfile as wav
+import noisereduce as nr
+from pydub.effects import normalize, high_pass_filter, low_pass_filter
 
 class Img:
 
@@ -24,7 +31,7 @@ class Img:
 
         Will raise an exception if the video file does not exist.
         """
-        print(self.__content_config)
+
         if not self.__content_config.video:
             raise Exception("No video file specified")
 
@@ -50,9 +57,9 @@ class Img:
         # if path is valid, set it in the content style
         self.__content_config.video = video_path
 
-    def __check_create_temp_dir(self) -> None:
-        if not os.path.exists(os.path.join(os.getcwd(), "temp")):
-            os.makedirs(os.path.join(os.getcwd(), "temp"))
+    def __check_create_temp_dir(self, folder:str = "temp") -> None:
+        if not os.path.exists(os.path.join(os.getcwd(), folder)):
+            os.makedirs(os.path.join(os.getcwd(), folder))
 
     def __generate_video(self) -> None:
 
@@ -96,12 +103,13 @@ class Img:
 
         # path to save the edited video
         self.__edited_video_path = os.path.join(
-            os.getcwd(), "temp", f"{self.__content_id}.mp4"
+            os.getcwd(), "output", f"{self.__content_id}.mp4"
         )
-
+        self.__check_create_temp_dir("output")
         edited_clip.write_videofile(
             self.__edited_video_path, codec="libx264", audio_codec="aac"
         )
+        os.remove(self.__audio_path)
 
     def __generate_story(self) -> None:
         """
@@ -129,12 +137,55 @@ class Img:
         """
 
         # todo: make this voice thing more natural
+
         tts = gTTS(text=self.__story, lang=self.__content_config.language)
         self.__check_create_temp_dir()
         self.__audio_path = os.path.join(
             os.getcwd(), "temp", f"{self.__content_id}.wav"
         )
         tts.save(self.__audio_path)
+        self.__modify_audio()
+
+    def __modify_audio(self) -> None:
+        """
+        Modify the audio like pitch, speed, etc.
+        """
+
+        audio = AudioSegment.from_file(self.__audio_path)
+
+        louder_audio = audio + 12 
+        faster_audio = louder_audio.speedup(playback_speed=1.1)
+
+        filtered_audio = high_pass_filter(faster_audio, 50)  
+        filtered_audio = low_pass_filter(filtered_audio, 5000) 
+
+        processed_audio = normalize(filtered_audio)
+
+        temp_wav_path = self.__audio_path.replace(".wav", "_temp.wav")
+        processed_audio.export(temp_wav_path, format="wav")
+
+        rate, data = wav.read(temp_wav_path)
+
+        cleaned_data = nr.reduce_noise(y=data, sr=rate)
+
+        wav.write(self.__audio_path, rate, cleaned_data)
+
+        # Remove temporary file
+        os.remove(temp_wav_path)
+
+        print("Audio successfully modified and cleaned.")
+
+
+
+
+    def __generate_subtitle(self) -> None:
+        """
+        Generate subtitle based on the story and the voice specified in the content style.
+        """
+        subtitle_path = os.path.join(
+            os.getcwd(), "temp", f"{self.__content_id}.srt"
+        )
+        pass
 
     def generate(self, config: Styles | Stories) -> None:
         """
@@ -148,11 +199,11 @@ class Img:
         # validate the video path before starting the generation process
         self.__validateVideoPath()
 
-        if(self.__content_config.story):
+        if isinstance(self.__content_config, Stories):
             self.__story = self.__content_config.story
         else:
             self.__generate_story()
-
+        
         self.__generate_audio()
         self.__generate_video()
         
