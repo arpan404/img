@@ -13,7 +13,7 @@ class Config:
         if not os.path.exists(path):
             raise FileNotFoundError(f"Configuration file not found: {path}")
         self.path = path
- 
+
     def load(self) -> None:
         """
         Loads the configuration file and return the save and return the config data

@@ -2,7 +2,7 @@ import os
 from google import genai
 import re
 from gtts import gTTS
-from moviepy import VideoFileClip, AudioFileClip
+from moviepy import VideoFileClip, AudioFileClip, TextClip, CompositeVideoClip
 import random
 from img.types import Styles, Stories
 import uuid
@@ -14,6 +14,7 @@ import numpy as np
 import scipy.io.wavfile as wav
 import noisereduce as nr
 from pydub.effects import normalize, high_pass_filter, low_pass_filter
+
 
 class Img:
 
@@ -43,9 +44,7 @@ class Img:
         else:
             is_relative = os.path.isfile(self.__content_config.video)
             if is_relative:
-                video_path = os.path.join(
-                    os.getcwd(), self.__content_config.video
-                )
+                video_path = os.path.join(os.getcwd(), self.__content_config.video)
             else:
                 video_path = os.path.join(
                     os.getcwd(), "videos", self.__content_config.video
@@ -57,7 +56,7 @@ class Img:
         # if path is valid, set it in the content style
         self.__content_config.video = video_path
 
-    def __check_create_temp_dir(self, folder:str = "temp") -> None:
+    def __check_create_temp_dir(self, folder: str = "temp") -> None:
         if not os.path.exists(os.path.join(os.getcwd(), folder)):
             os.makedirs(os.path.join(os.getcwd(), folder))
 
@@ -99,6 +98,33 @@ class Img:
             .with_audio(audio)
         )
 
+        composite_data = [edited_clip]
+
+        text1 = TextClip(text="First Text", font_size = 40, color='white', margin=(10,20), font='Arial')
+        text2 = TextClip(text="Second Text", font_size = 70,  color='yellow', font='Arial')
+        text3 = TextClip(text="Third Text",font_size = 70,  color='red' ,font='Arial')
+
+        # Set individual durations for each text clip
+        text1 = text1.with_duration(5)  # Display for 5 seconds
+        text2 = text2.with_duration(3)  # Display for 3 seconds
+        text3 = text3.with_duration(7)  # Display for 7 seconds
+
+        # Set the start times for each text clip (optional)
+        text1 = text1.with_start(0)  # Start at the beginning
+        text2 = text2.with_start(5)  # Start after text1 ends
+        text3 = text3.with_start(8)  # Start after text2 ends
+
+        # Set the positions of the text clips (customize as needed)
+        text1 = text1.with_position('center').with_fps(video.fps)
+        text2 = text2.with_position('center').with_fps(video.fps)
+        text3 = text3.with_position('center').with_fps(video.fps)
+
+        composite_data.append(text1)
+        composite_data.append(text2)
+        composite_data.append(text3)
+        # Combine the video and the text clips
+        edited_clip = CompositeVideoClip(composite_data)
+
         self.__check_create_temp_dir()
 
         # path to save the edited video
@@ -128,6 +154,9 @@ class Img:
 
         # remove any text inside parentheses from the story (usually it contains the environment description, which is not needed)
         self.__story = re.sub(r"\(.*?\)", "", response.text)
+        print(self.__story)
+        self.__story = re.sub(r"[^a-zA-Z0-9.?',!\s]", "", self.__story)
+        print(self.__story)
 
     def __generate_audio(self) -> None:
         """
@@ -153,11 +182,11 @@ class Img:
 
         audio = AudioSegment.from_file(self.__audio_path)
 
-        louder_audio = audio + 12 
+        louder_audio = audio + 12
         faster_audio = louder_audio.speedup(playback_speed=1.1)
 
-        filtered_audio = high_pass_filter(faster_audio, 50)  
-        filtered_audio = low_pass_filter(filtered_audio, 5000) 
+        filtered_audio = high_pass_filter(faster_audio, 50)
+        filtered_audio = low_pass_filter(filtered_audio, 5000)
 
         processed_audio = normalize(filtered_audio)
 
@@ -173,19 +202,6 @@ class Img:
         # Remove temporary file
         os.remove(temp_wav_path)
 
-        print("Audio successfully modified and cleaned.")
-
-
-
-
-    def __generate_subtitle(self) -> None:
-        """
-        Generate subtitle based on the story and the voice specified in the content style.
-        """
-        subtitle_path = os.path.join(
-            os.getcwd(), "temp", f"{self.__content_id}.srt"
-        )
-        pass
 
     def generate(self, config: Styles | Stories) -> None:
         """
@@ -194,7 +210,7 @@ class Img:
 
         Will not handle any errors, so make sure to handle them in the caller function.
         """
-        self.__content_config = config  
+        self.__content_config = config
 
         # validate the video path before starting the generation process
         self.__validateVideoPath()
@@ -203,7 +219,6 @@ class Img:
             self.__story = self.__content_config.story
         else:
             self.__generate_story()
-        
+
         self.__generate_audio()
         self.__generate_video()
-        
