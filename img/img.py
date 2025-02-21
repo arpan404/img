@@ -103,12 +103,14 @@ class Img:
         text_group = ""
         group_size = 0
         start_time = 0
-        text_max_sizes = (5, 100)  # 5 words maximum, 100 characters maximum
-        for text in texts:
+        #todo: make this sync with voice
+        text_max_sizes = (5, 50)  # 5 words maximum, 100 characters maximum
+        for index, text in enumerate(texts):
             if (
                 group_size + 1 > text_max_sizes[0]
-                or len(text_group) + len(text) + 1 > text_max_sizes[1]
+                or len(text_group) + len(text) + 1 > text_max_sizes[1] or index == len(texts) - 1
             ):
+                text_duration = len(text_group) * 0.1 + text_group.count(".") * 0.5 + text_group.count(",") * 0.2
                 text_group = text_group + " " + text
                 text_clip = TextClip(
                     text=text_group.strip(),
@@ -117,33 +119,18 @@ class Img:
                     margin=(10, 20),
                     font="Arial",
                     method="caption",
-                    size=(video_width - 80, video_height / 2),
+                    size=(video_width - 80, None),
                 )
-                text_clip = text_clip.with_duration(5)
+                text_clip = text_clip.with_duration(text_duration)
                 text_clip = text_clip.with_start(start_time)
                 text_clip = text_clip.with_position("center").with_fps(video.fps)
                 composite_data.append(text_clip)
                 text_group = ""
                 group_size = 0
-                start_time += 5
+                start_time += text_duration
             else:
                 text_group = text_group + " " + text
                 group_size += 1
-
-        if text_group != "":
-            text_clip = TextClip(
-                text=text_group.strip(),
-                font_size=40,
-                color="white",
-                margin=(10, 20),
-                font="Arial",
-                method="caption",
-                size=(video_width - 80, video_height / 2),
-            )
-            text_clip = text_clip.with_duration(5)
-            text_clip = text_clip.with_start(start_time)
-            text_clip = text_clip.with_position("center").with_fps(video.fps)
-            composite_data.append(text_clip)
 
         # Combine the video and the text clips
         edited_clip = CompositeVideoClip(composite_data)
