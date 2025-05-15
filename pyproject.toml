@@ -3,7 +3,19 @@ name = "img"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
+    "google-genai>=1.15.0",
+    "gtts>=2.5.4",
+    "moviepy>=2.1.2",
+    "noisereduce>=3.0.3",
     "numpy>=2.2.5",
+    "pydub>=0.25.1",
+    "scipy>=1.15.3",
+    "soundfile>=0.13.1",
+    # Use CUDA build on Linux/Windows, but Darwin needs 2.1.0+ for cp312 wheels
+    "torch>=1.13.0; platform_system!='Darwin'",
+    "torch>=2.1.0; platform_system=='Darwin'",
+    "transformers>=4.30.0",
+    "nari-tts @ git+https://github.com/nari-labs/dia.git"
 ]

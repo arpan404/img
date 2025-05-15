@@ -1,20 +1,17 @@
 import os
-from google import genai
 import re
-from gtts import gTTS
-from moviepy import VideoFileClip, AudioFileClip, TextClip, CompositeVideoClip
-import random
-from img.types import Styles, Stories
 import uuid
+import random
 import soundfile as sf
 import numpy as np
-from gtts import gTTS
+from google import genai
+from moviepy import VideoFileClip, AudioFileClip, TextClip, CompositeVideoClip
 from pydub import AudioSegment
-import numpy as np
 import scipy.io.wavfile as wav
 import noisereduce as nr
 from pydub.effects import normalize, high_pass_filter, low_pass_filter
-
+from img.types import Styles, Stories
+from img.tts import synthesize    # use our TTS helper
 
 class Img:
 
@@ -46,9 +43,10 @@ class Img:
             if is_relative:
                 video_path = os.path.join(os.getcwd(), self.__content_config.video)
             else:
-                video_path = os.path.join(
-                    os.getcwd(), "videos", self.__content_config.video
-                )
+                default_folder = os.path.join(os.getcwd(), "img", "videos")
+                if not os.path.isdir(default_folder):
+                    raise Exception(f"Video directory does not exist: {default_folder}")
+                video_path = os.path.join(default_folder, self.__content_config.video)
         # check if path exists and is a file
         if not os.path.exists(video_path) or not os.path.isfile(video_path):
             raise Exception("Video file does not exist")
@@ -170,20 +168,13 @@ class Img:
 
     def __generate_audio(self) -> None:
         """
-        Generate audio based on the story and the voice specified in the content style.
-
-        Will raise an exception if the audio generation fails.
+        Generate audio wav via Dia TTS
         """
-
-        # todo: make this voice thing more natural
-
-        tts = gTTS(text=self.__story, lang=self.__content_config.language)
         self.__check_create_temp_dir()
         self.__audio_path = os.path.join(
             os.getcwd(), "temp", f"{self.__content_id}.wav"
         )
-        tts.save(self.__audio_path)
-        self.__modify_audio()
+        synthesize(self.__story, self.__audio_path)
 
     def __modify_audio(self) -> None:
         """

@@ -21,3 +21,4 @@ __pycache__/
 
 uv.lock
 .python-version
+*.mp4
