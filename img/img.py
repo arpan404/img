@@ -2,24 +2,24 @@ import os
 import re
 import uuid
 import random
-import soundfile as sf
-import numpy as np
+from pathlib import Path
 from google import genai
 from moviepy import VideoFileClip, AudioFileClip, TextClip, CompositeVideoClip
 from pydub import AudioSegment
-import scipy.io.wavfile as wav
-import noisereduce as nr
-from pydub.effects import normalize, high_pass_filter, low_pass_filter
+from pydub.effects import normalize
 from img.types import Styles, Stories
 from img.tts import synthesize    # use our TTS helper
 
 class Img:
 
-    def __init__(self):
+    def __init__(self, ref_wav: str | None = None):
         """
         Initializes the Img class. Will generate a unique content id for the content.
         """
         self.__content_id = str(uuid.uuid4())
+        # default to local videoplayback.wav
+        default_ref = Path(__file__).parent / "videoplayback.wav"
+        self.ref_wav = str(ref_wav or default_ref)
 
     def __validateVideoPath(self) -> None:
         """
@@ -60,9 +60,8 @@ class Img:
 
     def __generate_video(self) -> None:
 
-        video_path = self.__content_config.video
-
-        video = VideoFileClip(video_path)
+        video = VideoFileClip(self.__content_config.video)
+        # audio was generated at 0.8× speed in synthesize()
         audio = AudioFileClip(self.__audio_path)
 
         if video.duration < audio.duration:
@@ -98,18 +97,23 @@ class Img:
 
         composite_data = [edited_clip]
         texts = self.__story.split(" ")
+        total_words = len(texts)
+        max_words_per_caption = 5
         text_group = ""
         group_size = 0
         start_time = 0
-        #todo: make this sync with voice
-        text_max_sizes = (5, 50)  # 5 words maximum, 100 characters maximum
-        for index, text in enumerate(texts):
-            if (
-                group_size + 1 > text_max_sizes[0]
-                or len(text_group) + len(text) + 1 > text_max_sizes[1] or index == len(texts) - 1
-            ):
-                text_duration = len(text_group) * 0.1 + text_group.count(".") * 0.5 + text_group.count(",") * 0.2
-                text_group = text_group + " " + text
+
+        for index, word in enumerate(texts):
+            # add word first so segment_words includes it
+            text_group += " " + word
+            segment_words = text_group.strip().split()
+            # break caption every N words or at end
+            if (group_size + 1 > max_words_per_caption) or index == total_words - 1:
+                # base duration proportional to segment length
+                base = (len(segment_words) / total_words) * audio.duration
+                # extra pause: 0.1s per comma, 0.3s per full-stop
+                extra = segment_words.count(',') * 0.1 + segment_words.count('.') * 0.3
+                text_duration = base + extra
                 text_clip = TextClip(
                     text=text_group.strip(),
                     font_size=40,
@@ -119,15 +123,14 @@ class Img:
                     method="caption",
                     size=(video_width - 80, None),
                 )
-                text_clip = text_clip.with_duration(text_duration)
-                text_clip = text_clip.with_start(start_time)
+                text_clip = text_clip.with_duration(text_duration).with_start(start_time)
                 text_clip = text_clip.with_position("center").with_fps(video.fps)
                 composite_data.append(text_clip)
+                # reset for next segment
                 text_group = ""
                 group_size = 0
                 start_time += text_duration
             else:
-                text_group = text_group + " " + text
                 group_size += 1
 
         # Combine the video and the text clips
@@ -147,15 +150,14 @@ class Img:
 
     def __generate_story(self) -> None:
         """
-
         Generate a story based on the prompt specified in the content style, and set it to self.__story.
-        Will use google Gemini 2.0 flash as LLM
-
-        Will raise an exception if the story generation fails.
-
+        Will use Google Gemini 2.0 flash as LLM
         """
         api_key = os.getenv("GEMINI_API_KEY")
-        client = genai.Client(api_key=api_key)
+        # export as GOOGLE_API_KEY so genai.Client() picks it up
+        os.environ["GOOGLE_API_KEY"] = api_key
+        client = genai.Client()
+
         response = client.models.generate_content(
             model="gemini-2.0-flash-001", contents=self.__content_config.prompt
         )
@@ -168,40 +170,20 @@ class Img:
 
     def __generate_audio(self) -> None:
         """
-        Generate audio wav via Dia TTS
+        Generate audio wav via Dia TTS, cloning style if voice_ref provided.
         """
         self.__check_create_temp_dir()
-        self.__audio_path = os.path.join(
-            os.getcwd(), "temp", f"{self.__content_id}.wav"
-        )
-        synthesize(self.__story, self.__audio_path)
+        out = os.path.join(os.getcwd(), "temp", f"{self.__content_id}.wav")
+        synthesize(self.__story, out, speed=0.8, ref_wav=self.ref_wav)
+        self.__audio_path = out
 
     def __modify_audio(self) -> None:
         """
-        Modify the audio like pitch, speed, etc.
+        Lightly normalize audio to preserve the cloned voice characteristics.
         """
-
         audio = AudioSegment.from_file(self.__audio_path)
-
-        louder_audio = audio + 12
-        faster_audio = louder_audio.speedup(playback_speed=1.1)
-
-        filtered_audio = high_pass_filter(faster_audio, 50)
-        filtered_audio = low_pass_filter(filtered_audio, 5000)
-
-        processed_audio = normalize(filtered_audio)
-
-        temp_wav_path = self.__audio_path.replace(".wav", "_temp.wav")
-        processed_audio.export(temp_wav_path, format="wav")
-
-        rate, data = wav.read(temp_wav_path)
-
-        cleaned_data = nr.reduce_noise(y=data, sr=rate)
-
-        wav.write(self.__audio_path, rate, cleaned_data)
-
-        # Remove temporary file
-        os.remove(temp_wav_path)
+        normalized = normalize(audio)
+        normalized.export(self.__audio_path, format="wav")
 
     def generate(self, config: Styles | Stories) -> None:
         """
@@ -221,4 +203,5 @@ class Img:
             self.__generate_story()
 
         self.__generate_audio()
+        self.__modify_audio()
         self.__generate_video()
