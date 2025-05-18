@@ -12,7 +12,12 @@ from img.tts import synthesize    # use our TTS helper
 
 class Img:
 
-    def __init__(self, ref_wav: str | None = None):
+    def __init__(
+        self,
+        ref_wav: str | None = None,
+        speed: float = 0.8,
+        voice: str = "default",
+    ):
         """
         Initializes the Img class. Will generate a unique content id for the content.
         """
@@ -20,6 +25,8 @@ class Img:
         # default to local videoplayback.wav
         default_ref = Path(__file__).parent / "videoplayback.wav"
         self.ref_wav = str(ref_wav or default_ref)
+        self.speed = speed
+        self.voice = voice
 
     def __validateVideoPath(self) -> None:
         """
@@ -96,42 +103,22 @@ class Img:
         )
 
         composite_data = [edited_clip]
-        texts = self.__story.split(" ")
-        total_words = len(texts)
-        max_words_per_caption = 5
-        text_group = ""
-        group_size = 0
-        start_time = 0
-
-        for index, word in enumerate(texts):
-            # add word first so segment_words includes it
-            text_group += " " + word
-            segment_words = text_group.strip().split()
-            # break caption every N words or at end
-            if (group_size + 1 > max_words_per_caption) or index == total_words - 1:
-                # base duration proportional to segment length
-                base = (len(segment_words) / total_words) * audio.duration
-                # extra pause: 0.1s per comma, 0.3s per full-stop
-                extra = segment_words.count(',') * 0.1 + segment_words.count('.') * 0.3
-                text_duration = base + extra
-                text_clip = TextClip(
-                    text=text_group.strip(),
+        # smooth captions: split into words and assign equal chunks of audio.duration
+        words = self.__story.split()
+        if words:
+            dur = audio.duration / len(words)
+            for idx, w in enumerate(words):
+                txt = TextClip(
+                    text=w,
                     font_size=40,
                     color="white",
                     margin=(10, 20),
                     font="Arial",
                     method="caption",
                     size=(video_width - 80, None),
-                )
-                text_clip = text_clip.with_duration(text_duration).with_start(start_time)
-                text_clip = text_clip.with_position("center").with_fps(video.fps)
-                composite_data.append(text_clip)
-                # reset for next segment
-                text_group = ""
-                group_size = 0
-                start_time += text_duration
-            else:
-                group_size += 1
+                ).with_start(idx * dur).with_duration(dur) \
+                 .with_position("center").with_fps(video.fps)
+                composite_data.append(txt)
 
         # Combine the video and the text clips
         edited_clip = CompositeVideoClip(composite_data)
@@ -174,7 +161,14 @@ class Img:
         """
         self.__check_create_temp_dir()
         out = os.path.join(os.getcwd(), "temp", f"{self.__content_id}.wav")
-        synthesize(self.__story, out, speed=0.8, ref_wav=self.ref_wav)
+        synthesize(
+            self.__story,
+            out,
+            sr=44100,
+            speed=self.speed,
+            voice=self.voice,
+            ref_wav=self.ref_wav,
+        )
         self.__audio_path = out
 
     def __modify_audio(self) -> None:
