@@ -16,8 +16,8 @@ def main():
     parser.add_argument(
         "--speed",
         type=float,
-        default=0.8,
-        help="Playback speed (0.5=half speed, 1.0=normal)"
+        default=0.9,
+        help="Speech rate multiplier (0.5=half speed, 1.0=normal, >1 faster)"
     )
     parser.add_argument(
         "--voice",
