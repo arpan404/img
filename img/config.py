@@ -23,7 +23,7 @@ class Config:
             with open(self.path, "r") as file:
                 self.config_data = Configuration.model_validate(json.load(file))
 
-    def get_style(self, variant: str) -> Styles:
+    def get_style(self, variant: str | None = None) -> Styles:
         """
         Returns the style of the content, which indicates the style of the content, including the voice, prompt, and other parameters
         """

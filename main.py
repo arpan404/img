@@ -1,43 +1,25 @@
-import argparse
 import os
-
+os.environ["LLM_API_KEY"] = "AIzaSyDXvcK1e8yWG0A6UJxoydKYLk8az3CIG-Y"
+os.environ["LLM_API_URL"] = "https://generativelanguage.googleapis.com/v1beta/openai/"
+os.environ["LLM_MODEL_NAME"] = "gemini-2.0-flash"
 from img.config import Config
 from img.img import Img
-
+from img.story import generate_story
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate video content with TTS"
-    )
-    parser.add_argument(
-        "--ref",
-        help="Path to reference WAV for voice style",
-        default=os.path.join("img", "videoplayback.wav")
-    )
-    parser.add_argument(
-        "--speed",
-        type=float,
-        default=0.9,
-        help="Speech rate multiplier (0.5=half speed, 1.0=normal, >1 faster)"
-    )
-    parser.add_argument(
-        "--voice",
-        choices=["default", "morgan", "emma"],
-        default="default",
-        help="Choose a 'celebrity' voice"
-    )
-    args = parser.parse_args()
+    # load and parse config
+    cfg = Config(os.path.join(os.getcwd(), "config.json"))
+    cfg.load()
 
-    config = Config("config.json")
-    config.load()
-    img = Img(
-        ref_wav=args.ref,
-        speed=args.speed,
-        voice=args.voice,
-    )
-    # drive a fresh Gemini‐generated story from the "style1" prompt
-    img.generate(config=config.get_style("style1"))
+    # fetch style (has prompt, video, language)
+    style_obj = cfg.get_style("style1")
 
+    # generate story text (optional, Img.generate will also do this if you skip this step)
+    story_text = generate_story(prompt=style_obj.prompt)
+
+    # run the full Img pipeline (TTS + video edit)
+    img = Img()
+    img.generate(style_obj)
 
 if __name__ == "__main__":
     main()
