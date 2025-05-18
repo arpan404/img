@@ -138,49 +138,6 @@ class Img:
         )
         os.remove(self.__audio_path)
 
-    def __generate_story(self) -> None:
-        """
-        Generate a story based on the prompt specified in the content style, and set it to self.__story.
-        Will use Google Gemini 2.0 flash as LLM
-        """
-        api_key = os.getenv("GEMINI_API_KEY")
-        # export as GOOGLE_API_KEY so genai.Client() picks it up
-        os.environ["GOOGLE_API_KEY"] = api_key
-        client = genai.Client()
-
-        response = client.models.generate_content(
-            model="gemini-2.0-flash-001", contents=self.__content_config.prompt
-        )
-
-        # remove any text inside parentheses from the story (usually it contains the environment description, which is not needed)
-        self.__story = re.sub(r"\(.*?\)", "", response.text)
-        print(self.__story)
-        self.__story = re.sub(r"[^a-zA-Z0-9.?',!\s]", "", self.__story)
-        print(self.__story)
-
-    def __generate_audio(self) -> None:
-        """
-        Generate audio wav via Dia TTS, cloning style if voice_ref provided.
-        """
-        self.__check_create_temp_dir()
-        out = os.path.join(os.getcwd(), "temp", f"{self.__content_id}.wav")
-        synthesize(
-            self.__story,
-            out,
-            sr=44100,
-            speed=self.speed,
-            voice=self.voice,
-            ref_wav=self.ref_wav,
-        )
-        self.__audio_path = out
-
-    def __modify_audio(self) -> None:
-        """
-        Lightly normalize audio to preserve the cloned voice characteristics.
-        """
-        audio = AudioSegment.from_file(self.__audio_path)
-        normalized = normalize(audio)
-        normalized.export(self.__audio_path, format="wav")
 
     def generate(self, config: Styles | Stories) -> None:
         """
