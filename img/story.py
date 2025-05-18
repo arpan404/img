@@ -2,8 +2,9 @@
     This module contains the code for generating the story, both text and audio.
     It uses openai's SDK to generate the story and Dia-1.6B to generate the audio.
 """
-from openai import OpenAI
 from os import getenv
+
+from openai import OpenAI
 
 SYSTEM_PROMPT = """
 You are a story generator. You will be given a prompt and you will generate a story based on that prompt.
@@ -22,7 +23,7 @@ assert LLM_MODEL_NAME, "LLM_MODEL_NAME not set. Please set it in your environmen
 def generate_story(prompt: str) -> str:
     """
     Generate a story based on the prompt provided.
-    
+
     :param prompt: The prompt to generate the story from.
     :return: The generated story.
     """
