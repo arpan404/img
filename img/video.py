@@ -1,6 +1,7 @@
 import os
 from pytube import YouTube
-
+from moviepy import AudioFileClip, VideoFileClip
+import random
 
 def __download_video(url:str) -> str:
     """
@@ -75,3 +76,51 @@ def __validateVideoPath(filepath_in_config:str) -> str:
         raise Exception("Video file does not exist")
 
     return video_path
+
+def __generate_video(base_video_filepath:str, voice_over:str, output_path:str):
+    """
+    
+    """
+    video = VideoFileClip(base_video_filepath)
+    audio = AudioFileClip(voice_over)
+
+    if video.duration < audio.duration:
+        raise Exception("Video duration is less than audio duration")
+    
+    video_width = video.w
+
+    # crop the video to 16:9 aspect ratio
+    content_width = int(video_width * (9/16))
+
+    if content_width > video_width:
+        raise Exception("Video width is less than content width")
+    
+    # pixels to crop from the left and right
+    left_crop = (video_width - content_width) / 2
+    right_crop = video_width - left_crop
+
+    # random starting point for video, based on audio duration
+    video_starting_point = random.uniform(0, video.duration - audio.duration)
+
+     #  trim the video, then crop it, then add the audio (in this order for performance reasons)
+    edited_clip = (
+        video.subclipped(
+            video_starting_point, video_starting_point + audio.duration
+        )
+        .without_audio()
+        .cropped(x1=left_crop, x2=right_crop)
+        .with_audio(audio)
+    )
+
+    #todo: add captions
+
+    edited_clip.write_videofile(
+        output_path,
+        codec="libx264",
+        audio_codec="aac",
+        threads=4,
+        preset="ultrafast",
+    )
+    video.close()
+    audio.close()
+    edited_clip.close()

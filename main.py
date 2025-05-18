@@ -4,7 +4,6 @@ import os
 from img.config import Config
 from img.img import Img
 
-
 def main():
     parser = argparse.ArgumentParser(
         description="Generate video content with TTS"
