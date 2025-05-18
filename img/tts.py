@@ -19,6 +19,10 @@ def synthesize(
 ) -> None:
     """
     Generate waveform for `text` (ref_wav ignored), slow by `speed`, and write to `out_path`.
+
+    :param text: Text to synthesize
+
+    :return: None
     """
     model = Dia.from_pretrained("nari-labs/Dia-1.6B")
     # plain text, no SSML
