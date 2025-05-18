@@ -1,14 +1,17 @@
 import os
+import random
 import re
 import uuid
-import random
 from pathlib import Path
+
 from google import genai
-from moviepy import VideoFileClip, AudioFileClip, TextClip, CompositeVideoClip
+from moviepy import AudioFileClip, CompositeVideoClip, TextClip, VideoFileClip
 from pydub import AudioSegment
 from pydub.effects import normalize
-from img.types import Styles, Stories
-from img.tts import synthesize    # use our TTS helper
+
+from img.tts import synthesize  # use our TTS helper
+from img.types import Stories, Styles
+
 
 class Img:
 

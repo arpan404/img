@@ -1,4 +1,5 @@
 import warnings
+
 # silence the torch.weight_norm deprecation
 warnings.filterwarnings(
     "ignore",
@@ -6,9 +7,10 @@ warnings.filterwarnings(
     message=".*weight_norm is deprecated.*"
 )
 
+import librosa.effects  # for true time‐stretch
 import soundfile as sf
-import librosa.effects    # for true time‐stretch
 from dia.model import Dia
+
 
 def synthesize(
     text: str,
@@ -19,6 +21,10 @@ def synthesize(
 ) -> None:
     """
     Generate waveform for `text` (ref_wav ignored), slow by `speed`, and write to `out_path`.
+
+    :param text: Text to synthesize
+
+    :return: None
     """
     model = Dia.from_pretrained("nari-labs/Dia-1.6B")
     # plain text, no SSML

@@ -1,6 +1,7 @@
 import json
 import os
-from img.types import Configuration, Styles, Stories
+
+from img.types import Configuration, Stories, Styles
 
 
 class Config:
