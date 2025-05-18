@@ -1,0 +1,16 @@
+{
+    "$schema": "/Users/rijan/img/schema.json",
+    "styles": {
+        "style1": {
+            "prompt": "Narrate a 50-60 second story that grabs attention from the start with a shocking twist. Begin with something unexpected—something that'll make the listener go, “Wait, what?” It could be a betrayal, a secret affair, or a scandal that flips everything upside down. Focus on intense moments—cheating, hidden desires, or secrets crashing down when you least expect it. Keep the pace quick, with twists that leave the audience guessing. Skip the moral lessons; just keep it raw and real. Make the story feel like a conversation, keeping the mystery alive. Make the story like narration dont talk to me think you are talking to public.",
+            "video": "minecraft1.mp4",
+            "language": "en"
+        },
+        "style2": {
+            "prompt": "Narrate a 50-60 second story that grabs attention from the start with a shocking twist. Make it feel like real. Use the story related to things which human mind is attracted to like: sex, money, power, love, betrayal, etc. You can also talk about juicy gossip, scandal, or secret affair. Only give the story, no moral lessons. You should narrate the story as you are telling it to your friend.  Make the story like narration dont talk to me think you are talking to public.",
+            "video": "minecraft1.mp4",
+            "language": "en"
+        }
+    },
+    "stories": {}
+}

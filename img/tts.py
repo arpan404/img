@@ -7,23 +7,24 @@ warnings.filterwarnings(
 )
 
 import soundfile as sf
+import librosa.effects    # for true time‐stretch
 from dia.model import Dia
 
 def synthesize(
     text: str,
     out_path: str,
     sr: int = 44100,
-    speed: float = 1.0,
-    voice: str = "default",
+    speed: float = 0.8,    # default slower
     ref_wav: str | None = None,
 ) -> None:
     """
-    Generate waveform for `text` at a natural pace and write to `out_path`.
+    Generate waveform for `text` (ref_wav ignored), slow by `speed`, and write to `out_path`.
     """
     model = Dia.from_pretrained("nari-labs/Dia-1.6B")
-    # wrap in SSML prosody: e.g. 80%–120% of normal
-    rate_pct = int(speed * 100)
-    ssml = f"<speak><prosody rate='{rate_pct}%'>{text}</prosody></speak>"
-    waveform = model.generate(ssml)
-    # write at fixed sample rate for faithful timing
+    # plain text, no SSML
+    waveform = model.generate(text)
+    # true slow down
+    if speed != 1.0:
+        waveform = librosa.effects.time_stretch(waveform, rate=speed)
+    # write at fixed sample rate to preserve timing
     sf.write(out_path, waveform, sr)
