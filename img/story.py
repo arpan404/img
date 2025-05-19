@@ -40,7 +40,7 @@ def generate_story(prompt: str) -> str:
         temperature=LLM_TEMPERATURE,
         max_tokens=LLM_MAX_TOKENS
     )
-    if response.status_code != 200:
-        raise Exception(f"Error generating story: {response.text}")
+    # if response.status_code != 200:
+    #     raise Exception(f"Error generating story: {response.text}")
     story = response.choices[0].message.content
     return story

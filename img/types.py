@@ -22,7 +22,7 @@ class Stories(BaseModel):
 # type for Config file and the content of the config file, same as the
 class Configuration(BaseModel):
     styles: Dict[str, Styles]
-    stories: Dict[str, Stories]
+    stories: Dict[str, Stories] = {}  # default empty so missing key no longer errors
 
 
 """
