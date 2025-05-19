@@ -1,3 +1,4 @@
 from .config import Config
-from .story import Story
-from .types import Configuration, Stories, Styles
+from .story import generate_story
+from .types import Configuration, Styles
+from .video import __download_video

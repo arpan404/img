@@ -1,5 +1,5 @@
 import os
-from pytube import YouTube
+from pytubefix import YouTube
 from moviepy import AudioFileClip, VideoFileClip
 import random
 
@@ -14,28 +14,30 @@ def __download_video(url:str) -> str:
     temp_dir = os.path.join(os.getcwd(), "temp")
     yt = YouTube(url)
     video_uuid = yt.video_id
-    video_filepath = os.path.join(temp_dir, "videos", f"{video_uuid}.mp4")
+    video_folder_path = os.path.join(temp_dir, "videos")
+    video_file_path = os.path.join(video_folder_path, f"{video_uuid}.mp4")
 
-    if os.path.exists(video_filepath):
-        return video_filepath
+    if os.path.exists(video_file_path):
+        return video_file_path
 
     # Create temp directory if it doesn't exist
     if not os.path.exists(temp_dir):
         os.makedirs(temp_dir)
-        os.makedirs(os.path.join(temp_dir, "videos"))
+        os.makedirs(video_folder_path)
     
-    if not os.path.exists(os.path.join(temp_dir, "videos")):
-        os.makedirs(os.path.join(temp_dir, "videos"))
-    
-    stream_1080p = yt.streams.filter(res="1080p", progressive=True).first() # priotize 1080p else fallback to the best stream
+    if not os.path.exists(video_folder_path):
+        os.makedirs(video_folder_path)
+    print(yt.streams)
+    stream_1080p = yt.streams.filter(res="1080p", progressive=False).first() # prioritize 1080p else fallback to the best stream
     if stream_1080p:
-        stream_1080p.download(output_path=video_filepath)
-        return video_filepath
+        stream_1080p.download(output_path=video_folder_path, filename=f"{video_uuid}.mp4")
+        return os.path.join(video_folder_path, f"{video_uuid}.mp4")
     
-    best_stream = yt.streams.filter(progressive=True).first()
+    best_stream = yt.streams.filter(progressive=False).first()
     if best_stream:
-        best_stream.download(output_path=video_filepath)
-        return video_filepath
+        best_stream.download(output_path=video_folder_path, filename=f"{video_uuid}.mp4")
+        return os.path.join(video_folder_path, f"{video_uuid}.mp4")
+    
     raise Exception(f"Error downloading video: {yt.title} - {yt.video_id}")
 
 def __validateVideoPath(filepath_in_config:str) -> str:

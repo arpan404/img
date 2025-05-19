@@ -21,22 +21,22 @@ class MediaBase(BaseModel):
         description="Two-letter ISO language code"
     )
 
-    @field_validator("video", pre=True)
+    @field_validator("video", mode="before")
     def _coerce_to_path(cls, v):
         # if it looks like a local file path, turn it into Path
         if isinstance(v, str) and not (v.startswith("http://") or v.startswith("https://")):
             return Path(v)
         return v
     
-    @field_validator("language")
+    @field_validator("language", mode="before")
     def _validate_language(cls, v):
         if not isinstance(v, Language):
             raise ValueError(f"Invalid language code: {v}")
         return v
 
-class Style(MediaBase):
+class Styles(MediaBase):
     prompt: str = Field(..., description="Prompt template for this style")
 
 
 class Configuration(BaseModel):
-    styles: Dict[str, Style]
+    styles: Dict[str, Styles]
