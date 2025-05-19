@@ -27,12 +27,6 @@ class MediaBase(BaseModel):
             return Path(v)
         return v
 
-    @field_validator("language", mode="before")
-    def _validate_language(cls, v):
-        if not isinstance(v, Language):
-            raise ValueError(f"Invalid language code: {v}")
-        return v
-
 
 class Styles(MediaBase):
     prompt: str = Field(..., description="Prompt template for this style")
