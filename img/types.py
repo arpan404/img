@@ -39,7 +39,10 @@ class Style(MediaBase):
 
 
 class Configuration(BaseModel):
-    styles: Dict[str, Style] = Field(
-        ...,
-        description="Map of style name → Style"
-    )
+    styles: Dict[str, Styles]
+    stories: Dict[str, Stories]
+
+
+"""
+For Img class
+"""
