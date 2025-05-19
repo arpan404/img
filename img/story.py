@@ -7,7 +7,7 @@ from os import getenv
 from openai import OpenAI
 
 SYSTEM_PROMPT = """
-You are a story generator. You will be given a prompt and you will generate a story based on that prompt.
+
 """
 
 LLM_API_KEY = getenv("LLM_API_KEY")

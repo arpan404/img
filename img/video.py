@@ -80,7 +80,6 @@ def __validateVideoPath(filepath_in_config:str) -> str:
 def __add_caption(video:VideoFileClip, caption:str) -> VideoFileClip:
     pass
 
-
 def __generate_video(base_video_filepath:str, voice_over:str,caption:str, output_path:str):
     """
     
