@@ -6,8 +6,6 @@ from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 class Language(str, Enum):
     EN = "en"
-    ES = "es"
-    # add more as needed
 
 
 MediaSource = Union[HttpUrl, Path]
