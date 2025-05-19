@@ -39,10 +39,4 @@ class Style(MediaBase):
 
 
 class Configuration(BaseModel):
-    styles: Dict[str, Styles]
-    stories: Dict[str, Stories]
-
-
-"""
-For Img class
-"""
+    styles: Dict[str, Style]
