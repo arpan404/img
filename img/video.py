@@ -15,7 +15,9 @@ def __download_video(url:str) -> str:
     yt = YouTube(url)
     video_uuid = yt.video_id
     video_folder_path = os.path.join(temp_dir, "videos")
-    video_file_path = os.path.join(video_folder_path, f"{video_uuid}.mp4")
+    stream = yt.streams.filter(res="1080p").first() if yt.streams.filter(res="1080p").first() else yt.streams.get_highest_resolution()
+    video_file_name = f"{video_uuid}.{stream.mime_type.split('/')[1]}"
+    video_file_path = os.path.join(video_folder_path, video_file_name)
 
     if os.path.exists(video_file_path):
         return video_file_path
@@ -27,16 +29,10 @@ def __download_video(url:str) -> str:
     
     if not os.path.exists(video_folder_path):
         os.makedirs(video_folder_path)
-    print(yt.streams)
-    stream_1080p = yt.streams.filter(res="1080p", progressive=False).first() # prioritize 1080p else fallback to the best stream
-    if stream_1080p:
-        stream_1080p.download(output_path=video_folder_path, filename=f"{video_uuid}.mp4")
-        return os.path.join(video_folder_path, f"{video_uuid}.mp4")
-    
-    best_stream = yt.streams.filter(progressive=False).first()
-    if best_stream:
-        best_stream.download(output_path=video_folder_path, filename=f"{video_uuid}.mp4")
-        return os.path.join(video_folder_path, f"{video_uuid}.mp4")
+        
+    if stream:
+        stream.download(output_path=video_folder_path, filename=video_file_name)
+        return video_file_path
     
     raise Exception(f"Error downloading video: {yt.title} - {yt.video_id}")
 
