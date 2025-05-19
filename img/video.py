@@ -1,9 +1,11 @@
 import os
-from pytubefix import YouTube
-from moviepy import AudioFileClip, VideoFileClip
 import random
 
-def __download_video(url:str) -> str:
+from moviepy import AudioFileClip, VideoFileClip
+from pytubefix import YouTube
+
+
+def __download_video(url: str) -> str:
     """
     Downloads a video from the given URL and saves it to a temporary directory.
     If the video is already downloaded, it returns the path to the existing file.
@@ -15,7 +17,11 @@ def __download_video(url:str) -> str:
     yt = YouTube(url)
     video_uuid = yt.video_id
     video_folder_path = os.path.join(temp_dir, "videos")
-    stream = yt.streams.filter(res="1080p").first() if yt.streams.filter(res="1080p").first() else yt.streams.get_highest_resolution()
+    stream = (
+        yt.streams.filter(res="1080p").first()
+        if yt.streams.filter(res="1080p").first()
+        else yt.streams.get_highest_resolution()
+    )
     video_file_name = f"{video_uuid}.{stream.mime_type.split('/')[1]}"
     video_file_path = os.path.join(video_folder_path, video_file_name)
 
@@ -26,17 +32,18 @@ def __download_video(url:str) -> str:
     if not os.path.exists(temp_dir):
         os.makedirs(temp_dir)
         os.makedirs(video_folder_path)
-    
+
     if not os.path.exists(video_folder_path):
         os.makedirs(video_folder_path)
-        
+
     if stream:
         stream.download(output_path=video_folder_path, filename=video_file_name)
         return video_file_path
-    
+
     raise Exception(f"Error downloading video: {yt.title} - {yt.video_id}")
 
-def __validateVideoPath(filepath_in_config:str) -> str:
+
+def __validateVideoPath(filepath_in_config: str) -> str:
     """
     Validates the video path specified in the style in the config.
     Will check if the path provided is a URL or a local file path.
@@ -50,7 +57,7 @@ def __validateVideoPath(filepath_in_config:str) -> str:
     assert filepath_in_config, "No video file specified"
 
     if filepath_in_config.startswith("http"):
-        video_path =__download_video(filepath_in_config)
+        video_path = __download_video(filepath_in_config)
         if not os.path.exists(video_path):
             raise Exception(f"Video file does not exist: {video_path}")
         return video_path
@@ -75,27 +82,29 @@ def __validateVideoPath(filepath_in_config:str) -> str:
 
     return video_path
 
-def __add_caption(video:VideoFileClip, caption:str) -> VideoFileClip:
+
+def __add_caption(video: VideoFileClip, caption: str) -> VideoFileClip:
     pass
 
-def __generate_video(base_video_filepath:str, voice_over:str,caption:str, output_path:str):
-    """
-    
-    """
+
+def __generate_video(
+    base_video_filepath: str, voice_over: str, caption: str, output_path: str
+):
+    """ """
     video = VideoFileClip(base_video_filepath)
     audio = AudioFileClip(voice_over)
 
     if video.duration < audio.duration:
         raise Exception("Video duration is less than audio duration")
-    
+
     video_width = video.w
 
     # crop the video to 16:9 aspect ratio
-    content_width = int(video_width * (9/16))
+    content_width = int(video_width * (9 / 16))
 
     if content_width > video_width:
         raise Exception("Video width is less than content width")
-    
+
     # pixels to crop from the left and right
     left_crop = (video_width - content_width) / 2
     right_crop = video_width - left_crop
@@ -103,17 +112,17 @@ def __generate_video(base_video_filepath:str, voice_over:str,caption:str, output
     # random starting point for video, based on audio duration
     video_starting_point = random.uniform(0, video.duration - audio.duration)
 
-     #  trim the video, then crop it, then add the audio (in this order for performance reasons)
+    #  trim the video, then crop it, then add the audio (in this order for performance reasons)
     edited_clip = (
-        video.subclipped(
-            video_starting_point, video_starting_point + audio.duration
-        )
+        video.subclipped(video_starting_point, video_starting_point + audio.duration)
         .without_audio()
         .cropped(x1=left_crop, x2=right_crop)
         .with_audio(audio)
     )
 
-    edited_clip = __add_caption(edited_clip, caption=caption) # add captions to the video
+    edited_clip = __add_caption(
+        edited_clip, caption=caption
+    )  # add captions to the video
 
     edited_clip.write_videofile(
         output_path,

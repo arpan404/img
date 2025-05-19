@@ -4,6 +4,7 @@ from typing import Dict, Union
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
+
 class Language(str, Enum):
     EN = "en"
 
@@ -13,26 +14,25 @@ MediaSource = Union[HttpUrl, Path]
 
 class MediaBase(BaseModel):
     video: MediaSource = Field(
-        ...,
-        description="URL or local file path to the media resource"
+        ..., description="URL or local file path to the media resource"
     )
-    language: Language = Field(
-        ...,
-        description="Two-letter ISO language code"
-    )
+    language: Language = Field(..., description="Two-letter ISO language code")
 
     @field_validator("video", mode="before")
     def _coerce_to_path(cls, v):
         # if it looks like a local file path, turn it into Path
-        if isinstance(v, str) and not (v.startswith("http://") or v.startswith("https://")):
+        if isinstance(v, str) and not (
+            v.startswith("http://") or v.startswith("https://")
+        ):
             return Path(v)
         return v
-    
+
     @field_validator("language", mode="before")
     def _validate_language(cls, v):
         if not isinstance(v, Language):
             raise ValueError(f"Invalid language code: {v}")
         return v
+
 
 class Styles(MediaBase):
     prompt: str = Field(..., description="Prompt template for this style")

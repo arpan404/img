@@ -1,7 +1,8 @@
 """
-    This module contains the code for generating the story, both text and audio.
-    It uses openai's SDK to generate the story and Dia-1.6B to generate the audio.
+This module contains the code for generating the story, both text and audio.
+It uses openai's SDK to generate the story and Dia-1.6B to generate the audio.
 """
+
 from os import getenv
 
 from openai import OpenAI
@@ -18,7 +19,10 @@ LLM_MAX_TOKENS = int(getenv("LLM_MAX_TOKENS", "10000"))
 
 assert LLM_API_KEY, "LLM_API_KEY not set. Please set it in your environment variables."
 assert LLM_API_URL, "LLM_API_URL not set. Please set it in your environment variables."
-assert LLM_MODEL_NAME, "LLM_MODEL_NAME not set. Please set it in your environment variables."
+assert LLM_MODEL_NAME, (
+    "LLM_MODEL_NAME not set. Please set it in your environment variables."
+)
+
 
 def generate_story(prompt: str) -> str:
     """
@@ -27,18 +31,15 @@ def generate_story(prompt: str) -> str:
     :param prompt: The prompt to generate the story from.
     :return: The generated story.
     """
-    client = OpenAI(
-        api_key=LLM_API_KEY,
-        base_url=LLM_API_URL
-    )
+    client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_API_URL)
     response = client.chat.completions.create(
         model=LLM_MODEL_NAME,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": prompt},
         ],
         temperature=LLM_TEMPERATURE,
-        max_tokens=LLM_MAX_TOKENS
+        max_tokens=LLM_MAX_TOKENS,
     )
     # if response.status_code != 200:
     #     raise Exception(f"Error generating story: {response.text}")

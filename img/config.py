@@ -1,7 +1,9 @@
 import json
-from pathlib import Path
 from functools import lru_cache
+from pathlib import Path
+
 from img.types import Configuration, Styles
+
 
 class Config:
     __slots__ = ("_path", "_config")
