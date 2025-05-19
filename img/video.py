@@ -77,7 +77,11 @@ def __validateVideoPath(filepath_in_config:str) -> str:
 
     return video_path
 
-def __generate_video(base_video_filepath:str, voice_over:str, output_path:str):
+def __add_caption(video:VideoFileClip, caption:str) -> VideoFileClip:
+    pass
+
+
+def __generate_video(base_video_filepath:str, voice_over:str,caption:str, output_path:str):
     """
     
     """
@@ -112,7 +116,7 @@ def __generate_video(base_video_filepath:str, voice_over:str, output_path:str):
         .with_audio(audio)
     )
 
-    #todo: add captions
+    edited_clip = __add_caption(edited_clip, caption=caption) # add captions to the video
 
     edited_clip.write_videofile(
         output_path,
