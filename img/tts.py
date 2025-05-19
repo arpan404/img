@@ -7,7 +7,7 @@ from pydub import AudioSegment
 def text_to_speech(
     text:str,
     output_file:str,
-):
+)-> None:
     """
     Generate speech from text using Dia-1.6B model.
     """
@@ -21,8 +21,11 @@ def text_to_speech(
     
     audio_temp_dir = tempfile.mkdtemp()
     model = Dia.from_pretrained("nari-labs/Dia-1.6B", compute_dtype="float16")
-    transcripts = []
-    last_line = ""
+    
+    transcripts:List[str] = []
+
+    last_line:str = ""
+
     for line in text.splitlines():
         line = line.strip()
         if line.startswith("[S1]") or line.startswith("[S2]"):
@@ -50,18 +53,16 @@ def text_to_speech(
         model.save_audio(out, audio)
         transcripts[i] = out
     
-    # Combine audio files into a single output file
-    with open(output_file, "wb") as outfile:
-        for transcript in transcripts:
-            with open(transcript, "rb") as infile:
-                outfile.write(infile.read())
+    # Combine all audio files into one
     output_audio = AudioSegment.empty()
     for audio in transcripts:
         audio_segment = AudioSegment.from_file(audio)
         output_audio += audio_segment
 
+    # Export the combined audio to the specified output file
     output_audio.export(output_file, format="mp3") 
-    
+
     # Clean up temporary files
     for transcript in transcripts:
         os.remove(transcript)
+    os.rmdir(audio_temp_dir)
