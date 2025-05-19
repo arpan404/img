@@ -1,30 +1,42 @@
-from pydantic import BaseModel
-from typing import Dict
+from enum import Enum
+from pathlib import Path
+from typing import Dict, Union
+
+from pydantic import BaseModel, Field, HttpUrl, field_validator
+
+class Language(str, Enum):
+    EN = "en"
 
 
-"""
-For Configuration file
-"""
+MediaSource = Union[HttpUrl, Path]
 
 
-class Styles(BaseModel):
-    prompt: str
-    video: str
-    language: str
+class MediaBase(BaseModel):
+    video: MediaSource = Field(
+        ...,
+        description="URL or local file path to the media resource"
+    )
+    language: Language = Field(
+        ...,
+        description="Two-letter ISO language code"
+    )
+
+    @field_validator("video", pre=True)
+    def _coerce_to_path(cls, v):
+        # if it looks like a local file path, turn it into Path
+        if isinstance(v, str) and not (v.startswith("http://") or v.startswith("https://")):
+            return Path(v)
+        return v
+    
+    @field_validator("language")
+    def _validate_language(cls, v):
+        if not isinstance(v, Language):
+            raise ValueError(f"Invalid language code: {v}")
+        return v
+
+class Style(MediaBase):
+    prompt: str = Field(..., description="Prompt template for this style")
 
 
-class Stories(BaseModel):
-    story: str
-    video: str
-    language: str
-
-
-# type for Config file and the content of the config file, same as the
 class Configuration(BaseModel):
-    styles: Dict[str, Styles]
-    stories: Dict[str, Stories]
-
-
-"""
-For Img class
-"""
+    styles: Dict[str, Style]

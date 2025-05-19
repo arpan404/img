@@ -11,23 +11,6 @@
         },
         "required": [
           "prompt",
-          "language"
-        ]
-      }
-    }
-  },
-  "stories": {
-    "type": "object",
-    "patternProperties": {
-      "^[a-zA-Z0-9]+$": {
-        "type": "object",
-        "properties": {
-          "story": "string",
-          "language": "string",
-          "video": "string"
-        },
-        "required": [
-          "prompt",
           "language",
           "video"
         ]

@@ -1,35 +1,32 @@
 import json
-import os
-from img.types import Configuration, Styles, Stories
-
+from pathlib import Path
+from functools import lru_cache
+from img.types import Configuration, Styles
 
 class Config:
-    config_data = None
+    __slots__ = ("_path", "_config")
 
-    def __init__(self, path: str = os.path.join(os.getcwd(), "config.json")):
-        # set the absolute path of the config file
-        if not os.path.isabs(path):
-            path = os.path.join(os.getcwd(), path)
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"Configuration file not found: {path}")
-        self.path = path
+    def __init__(self, path: str | Path = Path.cwd() / "config.json"):
+        self._path = Path(path)
+        if not self._path.is_absolute():
+            self._path = Path.cwd() / self._path
+        if not self._path.is_file():
+            raise FileNotFoundError(f"Configuration file not found: {self._path}")
+        self._config = self._load()
 
-    def load(self) -> None:
-        """
-        Loads the configuration file and return the save and return the config data
-        """
-        if self.config_data is None:
-            with open(self.path, "r") as file:
-                self.config_data = Configuration.model_validate(json.load(file))
+    def _load(self) -> Configuration:
+        """Read and validate the JSON config file."""
+        with self._path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        return Configuration.model_validate(data)
 
+    @lru_cache(maxsize=1)
     def get_style(self, variant: str) -> Styles:
         """
-        Returns the style of the content, which indicates the style of the content, including the voice, prompt, and other parameters
+        Retrieve a specific style variant.
+        Raises KeyError if the variant is not defined.
         """
-        return self.config_data.styles[variant]
-
-    def get_story(self, variant: str) -> Stories:
-        """
-        Returns the story of the content, which indicates the story of the content, including the story, video, and other parameters
-        """
-        return self.config_data.stories[variant]
+        try:
+            return self._config.styles[variant]
+        except KeyError as e:
+            raise KeyError(f"Style variant '{variant}' not found") from e
