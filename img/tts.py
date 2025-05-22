@@ -1,68 +1,139 @@
 import os
-from dia.model import Dia
+import re
 import tempfile
 from typing import List
+
+import torch
+import numpy as np
+import librosa
+import soundfile as sf
 from pydub import AudioSegment
+from dia.model import Dia
 
-def text_to_speech(
-    text:str,
-    output_file:str,
-)-> None:
-    """
-    Generate speech from text using Dia-1.6B model.
-    """
-    output_dir = os.path.dirname(output_file)
-    os.makedirs(output_dir, exist_ok=True)
-    s1_audio = os.path.join(os.getcwd(), "audio", "s1.mp3")
-    s2_audio = os.path.join(os.getcwd(), "audio", "s2.mp3")
-
-    if not os.path.exists(s1_audio) or not os.path.exists(s2_audio):
-        raise FileNotFoundError(f"Audio file not found: {s1_audio if not os.path.exists(s1_audio) else s2_audio}")
-    
-    audio_temp_dir = tempfile.mkdtemp()
-    model = Dia.from_pretrained("nari-labs/Dia-1.6B", compute_dtype="float16")
-    
-    transcripts:List[str] = []
-
-    last_line:str = ""
+# Chunk transcript based on word count and speaker consistency
+def chunk_transcripts(text: str, min_words: int = 20, max_words: int = 45) -> List[str]:
+    chunks = []
+    buffer = ""
+    buffer_word_count = 0
+    current_speaker = None
 
     for line in text.splitlines():
         line = line.strip()
-        if line.startswith("[S1]") or line.startswith("[S2]"):
-            if len(last_line) > 0:
-                transcripts.append(last_line)
-                last_line = ""
-            last_line += line
-            last_line = last_line.strip()
+        if not line or not line.startswith("[S"):
+            continue
 
-    if len(last_line) > 0:
-        transcripts.append(last_line)
-    if len(transcripts) == 0:
-        raise ValueError("No valid transcripts found in the text.")
-    
-    for i, transcript in enumerate(transcripts):
-        speaker = "S1" if transcript.startswith("[S1]") else "S2"
-        transcript = transcript.replace(f"[{speaker}]", "[S1]").strip()
+        match = re.match(r"\[(S\d)\](.*)", line)
+        if not match:
+            continue
+
+        speaker, dialogue = match.groups()
+        dialogue = dialogue.strip()
+        full_line = f"[{speaker}] {dialogue}"
+        word_count = len(dialogue.split())
+
+        if current_speaker == speaker or not buffer:
+            buffer += " " + full_line
+            buffer_word_count += word_count
+            current_speaker = speaker
+            if buffer_word_count >= max_words:
+                chunks.append(buffer.strip())
+                buffer = ""
+                buffer_word_count = 0
+        else:
+            if buffer_word_count >= min_words:
+                chunks.append(buffer.strip())
+                buffer = f"{full_line}"
+                buffer_word_count = word_count
+                current_speaker = speaker
+            else:
+                buffer += " " + full_line
+                buffer_word_count += word_count
+
+    if buffer and buffer_word_count >= min_words:
+        chunks.append(buffer.strip())
+
+    return chunks
+
+
+# Main TTS function using Dia
+def text_to_speech(text: str, output_file: str) -> None:
+    output_dir = os.path.dirname(output_file)
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Load prompt audio (currently using one voice)
+    prompt_audio_path = os.path.abspath("/Users/rijan/img/img/simple.mp3")
+    if not os.path.exists(prompt_audio_path):
+        raise FileNotFoundError(f"Audio file not found: {prompt_audio_path}")
+
+    print(f"Prompt audio loaded from: {prompt_audio_path}")
+
+    # Load model
+    print("Loading Dia model...")
+    model = Dia.from_pretrained("nari-labs/Dia-1.6B", compute_dtype="float16")
+    print("Model loaded!")
+
+    # Chunk the text
+    print("✂️ Chunking transcript...")
+    transcript_chunks = chunk_transcripts(text, min_words=30)
+    if not transcript_chunks:
+        raise ValueError("No valid dialogue lines found.")
+
+    # Create temp folder to hold audio clips
+    audio_temp_dir = tempfile.mkdtemp()
+    audio_files = []
+
+    print("Generating audio for each chunk...")
+    for i, transcript in enumerate(transcript_chunks):
+        speaker_match = re.match(r"\[(S\d)\]", transcript)
+        speaker = speaker_match.group(1) if speaker_match else "S1"
+        clean_transcript = transcript.replace("[PAUSE]", "").strip()
+
+        print(f"({speaker}) Chunk {i+1}: {clean_transcript}")
+
+        # Generate audio
         audio = model.generate(
-            transcript,
-            audio_prompt=s1_audio if speaker == "S1" else s2_audio,
+            clean_transcript,
+            audio_prompt=prompt_audio_path,
             use_torch_compile=False,
             verbose=True,
         )
-        out = os.path.join(audio_temp_dir, f"{speaker}_{i}.mp3")
-        model.save_audio(out, audio)
-        transcripts[i] = out
-    
-    # Combine all audio files into one
-    output_audio = AudioSegment.empty()
-    for audio in transcripts:
-        audio_segment = AudioSegment.from_file(audio)
-        output_audio += audio_segment
 
-    # Export the combined audio to the specified output file
-    output_audio.export(output_file, format="mp3") 
+        if isinstance(audio, torch.Tensor) and audio.ndim == 1:
+            audio = audio.unsqueeze(1)  # Ensure audio has shape [samples, 1]
+
+        output_path = os.path.join(audio_temp_dir, f"{speaker}_{i}.mp3")
+        model.save_audio(output_path, audio)
+        audio_files.append(output_path)
+
+    # Combine all audio clips
+    print("Concatenating audio chunks...")
+    final_audio = AudioSegment.empty()
+    for audio_path in audio_files:
+        segment = AudioSegment.from_file(audio_path)
+        final_audio += segment
+
+    final_audio.export(output_file, format="mp3")
+    print(f"Final audio saved to: {output_file}")
 
     # Clean up temporary files
-    for transcript in transcripts:
-        os.remove(transcript)
+    for path in audio_files:
+        os.remove(path)
     os.rmdir(audio_temp_dir)
+
+
+# Optional: Remove silence
+def remove_silence(input_file: str, output_file: str, silence_threshold=-50.0):
+    print("Removing silence...")
+    audio, sr = librosa.load(input_file)
+    non_silent_intervals = librosa.effects.split(audio, top_db=40)
+
+    if len(non_silent_intervals) == 0:
+        print(" No non-silent parts found. Check the input or adjust top_db.")
+        return
+
+    # Extract non-silent parts
+    cleaned_audio = np.concatenate([audio[start:end] for start, end in non_silent_intervals])
+    output_cleaned = os.path.splitext(output_file)[0] + "_cleaned.mp3"
+
+    sf.write(output_cleaned, cleaned_audio, sr)
+    print(f"Cleaned audio saved to: {output_cleaned}")
