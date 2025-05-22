@@ -1,3 +1,4 @@
+
 import os
 import re
 import tempfile
@@ -11,7 +12,7 @@ from pydub import AudioSegment
 from dia.model import Dia
 
 # Chunk transcript based on word count and speaker consistency
-def chunk_transcripts(text: str, min_words: int = 20, max_words: int = 45) -> List[str]:
+def chunk_transcripts(text: str, min_words: int = 20, max_words: int = 50) -> List[str]:
     chunks = []
     buffer = ""
     buffer_word_count = 0
@@ -59,9 +60,9 @@ def chunk_transcripts(text: str, min_words: int = 20, max_words: int = 45) -> Li
 def text_to_speech(text: str, output_file: str) -> None:
     output_dir = os.path.dirname(output_file)
     os.makedirs(output_dir, exist_ok=True)
-
+    clone_from_text = "[S1] Hello Everyone! Welcome to the room of chaos. Nobody knows how the code works. [S2] Hello everyone! This is the second voice. Hope you all love it.[S1]"
     # Load prompt audio (currently using one voice)
-    prompt_audio_path = os.path.abspath("/Users/rijan/img/img/simple.mp3")
+    prompt_audio_path = os.path.abspath("/Users/rijan/img/audio/prompt_audio.mp3")
     if not os.path.exists(prompt_audio_path):
         raise FileNotFoundError(f"Audio file not found: {prompt_audio_path}")
 
@@ -92,14 +93,11 @@ def text_to_speech(text: str, output_file: str) -> None:
 
         # Generate audio
         audio = model.generate(
-            clean_transcript,
+            clone_from_text+ clean_transcript.strip()+ ". [PAUSE]",
             audio_prompt=prompt_audio_path,
             use_torch_compile=False,
-            verbose=True,
+            verbose=False,
         )
-
-        if isinstance(audio, torch.Tensor) and audio.ndim == 1:
-            audio = audio.unsqueeze(1)  # Ensure audio has shape [samples, 1]
 
         output_path = os.path.join(audio_temp_dir, f"{speaker}_{i}.mp3")
         model.save_audio(output_path, audio)
