@@ -62,17 +62,15 @@ def chunk_transcripts(text: str, min_words: int = 20, max_words: int = 50) -> Li
 
 def text_to_speech(text: str, output_file: str) -> None:
 
-    output_dir = os.path.dirname(output_file)
-    os.makedirs(output_dir, exist_ok=True)
-    clone_from_text = "[S1] Hello Everyone! Welcome to the room of chaos. Nobody knows how the code works. [S2] Hello everyone! This is the second voice. Hope you all love it.[S1]"
-    # Load prompt audio (currently using one voice)
-    prompt_audio_path = os.path.abspath("/Users/rijan/img/audio/prompt_audio.mp3")
-    if not os.path.exists(prompt_audio_path):
-        raise FileNotFoundError(f"Audio file not found: {prompt_audio_path}")
 
-    print(f"Prompt audio loaded from: {prompt_audio_path}")
+    # Get the directory of the current script
+    script_dir = os.path.abspath(os.path.dirname(__file__))
 
-    # Load model
+    # Go up one level to the parent 'img' directory
+    parent_dir = os.path.abspath(os.path.join(script_dir, ".."))
+
+    # Build audio paths from the parent directory
+    audio_dir = os.path.join(parent_dir, "audio")
     print("Loading Dia model...")
     model = Dia.from_pretrained("nari-labs/Dia-1.6B", compute_dtype="float16")
     print("Model loaded!")
@@ -94,11 +92,22 @@ def text_to_speech(text: str, output_file: str) -> None:
         clean_transcript = transcript.replace("[PAUSE]", "").strip()
 
         print(f"({speaker}) Chunk {i+1}: {clean_transcript}")
+        
+        if speaker == "S2":
+            speaker_prompt_audio = os.path.join(audio_dir, "audio_prompt.mp3")
+            clone_from_text = "[S2] Hello everyone! This is the second voice. Hope you all love it. [S1] Hello Everyone! Welcome to the room of chaos. Nobody knows how the code works.[S2]"
+        else:
+            speaker_prompt_audio = os.path.join(audio_dir, "prompt_audio.mp3")
+
+            clone_from_text = "[S1] Hello Everyone! Welcome to the room of chaos. Nobody knows how the code works. [S2] Hello everyone! This is the second voice. Hope you all love it.[S1]"
+
+        if not os.path.exists(speaker_prompt_audio):
+            raise FileNotFoundError(f"Prompt audio for {speaker} not found: {speaker_prompt_audio}")
 
         # Generate audio
         audio = model.generate(
             clone_from_text+ clean_transcript.strip()+ ". [PAUSE]",
-            audio_prompt=prompt_audio_path,
+            audio_prompt=speaker_prompt_audio,
             use_torch_compile=False,
             verbose=False,
         )
