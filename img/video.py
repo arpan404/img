@@ -48,7 +48,7 @@ def __download_video(url: str) -> str:
     raise Exception(f"Error downloading video: {yt.title} - {yt.video_id}")
 
 
-def __validateVideoPath(filepath_in_config: str) -> str:
+def validateVideoPath(filepath_in_config: str) -> str:
     """
     Validates the video path specified in the style in the config.
     Will check if the path provided is a URL or a local file path.
@@ -92,7 +92,7 @@ def __add_caption(video: VideoFileClip, caption: str) -> VideoFileClip:
     pass
 
 
-def __generate_video(
+def generate_video(
     base_video_filepath: str, voice_over: str, caption: str, output_path: str
 ):
     """ """
@@ -103,9 +103,10 @@ def __generate_video(
         raise Exception("Video duration is less than audio duration")
 
     video_width = video.w
+    video_height = video.h
 
     # crop the video to 16:9 aspect ratio
-    content_width = int(video_width * (9 / 16))
+    content_width = int(video_height * (9 / 16))
 
     if content_width > video_width:
         raise Exception("Video width is less than content width")
@@ -125,9 +126,9 @@ def __generate_video(
         .with_audio(audio)
     )
 
-    edited_clip = __add_caption(
-        edited_clip, caption=caption
-    )  # add captions to the video
+    # edited_clip = __add_caption(
+    #     edited_clip, caption=caption
+    # )  # add captions to the video
 
     edited_clip.write_videofile(
         output_path,
