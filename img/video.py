@@ -1,3 +1,8 @@
+'''
+This module is responsible for downloading a video from a URL or local path,
+cropping it to a 16:9 aspect ratio, and adding audio to the video.
+It uses the moviepy library for video editing and pytubefix for downloading YouTube videos.
+'''
 import os
 import random
 

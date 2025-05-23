@@ -1,3 +1,7 @@
+'''
+This module defines the data structures used for the image generation
+and media configuration in the application.
+'''
 from enum import Enum
 from pathlib import Path
 from typing import Dict, Union

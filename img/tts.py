@@ -1,10 +1,14 @@
-
+'''
+This module provides a function to convert text to speech using the Dia model.
+It includes functionality to chunk transcripts based on word count and speaker consistency,
+and to remove silence from the generated audio.
+It uses the pydub library for audio manipulation and librosa for silence removal.
+'''
 import os
 import re
 import tempfile
 from typing import List
 
-import torch
 import numpy as np
 import librosa
 import soundfile as sf
@@ -119,7 +123,7 @@ def text_to_speech(text: str, output_file: str) -> None:
     os.rmdir(audio_temp_dir)
 
 
-# Optional: Remove silence
+# If needed: Remove silence
 def remove_silence(input_file: str, output_file: str, silence_threshold=-50.0):
     print("Removing silence...")
     audio, sr = librosa.load(input_file)
