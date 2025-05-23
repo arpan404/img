@@ -56,8 +56,8 @@ def chunk_transcripts(text: str, min_words: int = 20, max_words: int = 50) -> Li
     return chunks
 
 
-# Main TTS function using Dia
 def text_to_speech(text: str, output_file: str) -> None:
+
     output_dir = os.path.dirname(output_file)
     os.makedirs(output_dir, exist_ok=True)
     clone_from_text = "[S1] Hello Everyone! Welcome to the room of chaos. Nobody knows how the code works. [S2] Hello everyone! This is the second voice. Hope you all love it.[S1]"
