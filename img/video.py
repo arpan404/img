@@ -6,10 +6,9 @@ It uses the moviepy library for video editing and pytubefix for downloading YouT
 import os
 import random
 
-from moviepy import AudioFileClip, VideoFileClip
+from moviepy import AudioFileClip, VideoFileClip, TextClip, CompositeVideoClip
 from pytubefix import YouTube
-
-
+from typing import List
 def __download_video(url: str) -> str:
     """
     Downloads a video from the given URL and saves it to a temporary directory.
@@ -88,8 +87,21 @@ def validateVideoPath(filepath_in_config: str) -> str:
     return video_path
 
 
-def __add_caption(video: VideoFileClip, caption: str) -> VideoFileClip:
-    pass
+def __get_caption_data(caption: str, audio_file:str) -> List[TextClip]:
+    # print(caption)
+    # txt = TextClip(text=caption, font_size = 70, color ="green", font="Arial")
+    # # set how long the text should appear and where
+    # txt = txt.with_duration(10)
+    # txt = txt.with_position(("center", "bottom"))
+    # return txt # Placeholder for captioning logic
+    text_clips = []
+    for i in range(0, 10):
+        txt = TextClip(text=f"CUrrent text is {i}", font_size = 70, color ="green", font="Arial")
+        txt = txt.with_position((random.randint(0, 100), random.randint(0, 100)))
+        txt= txt.with_duration(2)
+        txt = txt.with_start(i*2)
+        text_clips.append(txt)
+    return text_clips
 
 
 def generate_video(
@@ -125,16 +137,14 @@ def generate_video(
         .cropped(x1=left_crop, x2=right_crop)
         .with_audio(audio)
     )
-
-    # edited_clip = __add_caption(
-    #     edited_clip, caption=caption
-    # )  # add captions to the video
+    caption_data = __get_caption_data(caption, voice_over)
+    edited_clip = CompositeVideoClip([edited_clip] + caption_data)
 
     edited_clip.write_videofile(
         output_path,
-        codec="libx264",
+        codec="h264_videotoolbox",
         audio_codec="aac",
-        threads=4,
+        threads=os.cpu_count(),
         preset="ultrafast",
     )
     video.close()
