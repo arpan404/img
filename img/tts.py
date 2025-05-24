@@ -1,19 +1,21 @@
-'''
+"""
 This module provides a function to convert text to speech using the Dia model.
 It includes functionality to chunk transcripts based on word count and speaker consistency,
 and to remove silence from the generated audio.
 It uses the pydub library for audio manipulation and librosa for silence removal.
-'''
+"""
+
 import os
 import re
 import tempfile
 from typing import List
 
-import numpy as np
 import librosa
+import numpy as np
 import soundfile as sf
-from pydub import AudioSegment
 from dia.model import Dia
+from pydub import AudioSegment
+
 
 # Chunk transcript based on word count and speaker consistency
 def chunk_transcripts(text: str, min_words: int = 20, max_words: int = 50) -> List[str]:
@@ -61,8 +63,6 @@ def chunk_transcripts(text: str, min_words: int = 20, max_words: int = 50) -> Li
 
 
 def text_to_speech(text: str, output_file: str) -> None:
-
-
     # Get the directory of the current script
     script_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -91,8 +91,8 @@ def text_to_speech(text: str, output_file: str) -> None:
         speaker = speaker_match.group(1) if speaker_match else "S1"
         clean_transcript = transcript.replace("[PAUSE]", "").strip()
 
-        print(f"({speaker}) Chunk {i+1}: {clean_transcript}")
-        
+        print(f"({speaker}) Chunk {i + 1}: {clean_transcript}")
+
         if speaker == "S2":
             speaker_prompt_audio = os.path.join(audio_dir, "audio_prompt.mp3")
             clone_from_text = "[S2] Hello everyone! This is the second voice. Hope you all love it. [S1] Hello Everyone! Welcome to the room of chaos. Nobody knows how the code works.[S2]"
@@ -102,11 +102,13 @@ def text_to_speech(text: str, output_file: str) -> None:
             clone_from_text = "[S1] Hello Everyone! Welcome to the room of chaos. Nobody knows how the code works. [S2] Hello everyone! This is the second voice. Hope you all love it.[S1]"
 
         if not os.path.exists(speaker_prompt_audio):
-            raise FileNotFoundError(f"Prompt audio for {speaker} not found: {speaker_prompt_audio}")
+            raise FileNotFoundError(
+                f"Prompt audio for {speaker} not found: {speaker_prompt_audio}"
+            )
 
         # Generate audio
         audio = model.generate(
-            clone_from_text+ clean_transcript.strip()+ ". [PAUSE]",
+            clone_from_text + clean_transcript.strip() + ". [PAUSE]",
             audio_prompt=speaker_prompt_audio,
             use_torch_compile=False,
             verbose=False,
@@ -143,7 +145,9 @@ def remove_silence(input_file: str, output_file: str, silence_threshold=-50.0):
         return
 
     # Extract non-silent parts
-    cleaned_audio = np.concatenate([audio[start:end] for start, end in non_silent_intervals])
+    cleaned_audio = np.concatenate(
+        [audio[start:end] for start, end in non_silent_intervals]
+    )
     output_cleaned = os.path.splitext(output_file)[0] + "_cleaned.mp3"
 
     sf.write(output_cleaned, cleaned_audio, sr)

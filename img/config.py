@@ -1,6 +1,7 @@
-'''
+"""
 This module handles the configuration for the image generation process.
-'''
+"""
+
 import json
 from functools import lru_cache
 from pathlib import Path

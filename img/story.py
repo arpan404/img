@@ -6,6 +6,9 @@ It uses openai's SDK to generate the story and Dia-1.6B to generate the audio.
 from os import getenv
 
 from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
 
 SYSTEM_PROMPT = """
 You are a "YouTube Shorts Story Generator" whose sole job is to turn a user's topic or idea into a short, engaging story script formatted for DIA TTS. When the user provides a prompt, you must:

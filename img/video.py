@@ -1,14 +1,17 @@
-'''
+"""
 This module is responsible for downloading a video from a URL or local path,
 cropping it to a 16:9 aspect ratio, and adding audio to the video.
 It uses the moviepy library for video editing and pytubefix for downloading YouTube videos.
-'''
+"""
+
 import os
 import random
-
-from moviepy import AudioFileClip, VideoFileClip, TextClip, CompositeVideoClip
-from pytubefix import YouTube
 from typing import List
+
+from moviepy import AudioFileClip, CompositeVideoClip, TextClip, VideoFileClip
+from pytubefix import YouTube
+
+
 def __download_video(url: str) -> str:
     """
     Downloads a video from the given URL and saves it to a temporary directory.
@@ -87,19 +90,15 @@ def validateVideoPath(filepath_in_config: str) -> str:
     return video_path
 
 
-def __get_caption_data(caption: str, audio_file:str) -> List[TextClip]:
-    # print(caption)
-    # txt = TextClip(text=caption, font_size = 70, color ="green", font="Arial")
-    # # set how long the text should appear and where
-    # txt = txt.with_duration(10)
-    # txt = txt.with_position(("center", "bottom"))
-    # return txt # Placeholder for captioning logic
+def __get_caption_data(caption: str, audio_file: str) -> List[TextClip]:
     text_clips = []
     for i in range(0, 10):
-        txt = TextClip(text=f"CUrrent text is {i}", font_size = 70, color ="green", font="Arial")
+        txt = TextClip(
+            text=f"CUrrent text is {i}", font_size=70, color="green", font="Arial"
+        )
         txt = txt.with_position((random.randint(0, 100), random.randint(0, 100)))
-        txt= txt.with_duration(2)
-        txt = txt.with_start(i*2)
+        txt = txt.with_duration(2)
+        txt = txt.with_start(i * 2)
         text_clips.append(txt)
     return text_clips
 
